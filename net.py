@@ -1,5 +1,5 @@
 import socket
-from IPy import IP
+import ipaddress
 import time
 
 def scan(target):
@@ -11,7 +11,7 @@ def scan(target):
 
 def check_ip(ip):
     try:
-        IP(ip)
+        ipaddress.ip_address(ip)
         return ip
     except ValueError:
         return socket.gethostbyname(ip)
