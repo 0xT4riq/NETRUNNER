@@ -2,9 +2,19 @@ import socket
 import ipaddress
 import time
 import threading
+import concurrent.futures
+import signal
+import sys
 
 
+def shutdown(sig, frame):
+  print("\nGracefully shutting down...")
+  sys.exit(0)
 
+signal.signal(signal.SIGINT, shutdown)
+
+
+  
 def check_ip(ip):
     try:
         ipaddress.ip_address(ip)
@@ -14,27 +24,28 @@ def check_ip(ip):
 
 def scan_port(ipaddress, port):
     try:
-        sock = socket.socket()
-        sock.settimeout(1)
-        sock.connect((ipaddress, port))
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.settimeout(1)
+            sock.connect((ipaddress, port))
         try:
-            banner = sock.recv(1024).decode().strip()
+            data = sock.recv(1024)
+            banner = data.decode('utf-8', errors='ignore').strip()
             if banner:
                 print("[+] Port " + str(port) + " is open | Banner: " + banner)
             else:   
                 print("[+] Port " + str(port) + " is open | No banner received")
         except:
             print(f"[+] Port {port} is open: Unable to detect version")
-        sock.close()
     except:
         pass
 
 def scan(target,start,end):
     converted_ip = check_ip(target)
     print('\n' + '[# Scanning Target]---- ' + str(target))
-    for port in range(start, end + 1):
-        thread = threading.Thread(target=scan_port, args=(converted_ip, port))
-        thread.start()
+    with concurrent.futures.ThreadPoolExecutor(max_workers=100) as executor:
+        for port in range(start, end + 1):
+            executor.submit(scan_port, converted_ip, port)
+        pass
 
 targets = input("[+] Enter target/s to scan (split multiple targets with ','): ")
 port_range = input("[+] Enter the port range to scan (e.g. 20-80) or leave it empty: ")
