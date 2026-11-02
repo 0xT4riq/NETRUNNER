@@ -17,7 +17,14 @@ def scan_port(ipaddress, port):
         sock = socket.socket()
         sock.settimeout(1)
         sock.connect((ipaddress, port))
-        print("[+] Port " + str(port) + " is open")
+        try:
+            banner = sock.recv(1024).decode().strip()
+            if banner:
+                print("[+] Port " + str(port) + " is open | Banner: " + banner)
+            else:   
+                print("[+] Port " + str(port) + " is open | No banner received")
+        except:
+            print(f"[+] Port {port} is open: Unable to detect version")
         sock.close()
     except:
         pass
