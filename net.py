@@ -29,13 +29,25 @@ def scan_port(ipaddress, port):
             sock.connect((ipaddress, port))
 
             data = sock.recv(1024)
+            if not data:
+                request = (
+                    f"HEAD / HTTP/1.1\r\n"
+                    f"Host: {hostname}\r\n"
+                    f"Connection: close\r\n\r\n"
+                )
+                sock.sendall(request.encode())
+                data = sock.recv(1024)
             banner = data.decode('utf-8', errors='ignore').strip()
+            try:
+                service = socket.getservbyport(port, "tcp")
+            except (OSError, socket.error):
+                service = "Unknown"
 
             return {
                 "port": port,
                 "status": "open",
                 "banner": banner if banner else "No banner received",
-                "service": socket.getservbyport(port, "tcp")
+                "service": service
             }
     except OSError:
         return None
