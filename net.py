@@ -34,7 +34,8 @@ def scan_port(ipaddress, port):
             return {
                 "port": port,
                 "status": "open",
-                "banner": banner if banner else "No banner received"
+                "banner": banner if banner else "No banner received",
+                "service": socket.getservbyport(port, "tcp")
             }
     except OSError:
         return None
@@ -43,12 +44,13 @@ def print_open_ports(open_ports, target, start, end):
     print(f" NETRUNNER | SCAN RESULTS FOR {target}")
     print("=" * 65)
 
-    print(f"{'PORT':<10} {'STATUS':<12} {'BANNER'}")
+    print(f"{'PORT':<10} {'SERVICE':<12} {'STATUS':<12} {'BANNER'}")
     print("-" * 65)
     open_ports.sort(key=lambda x: x["port"])
     for result in open_ports:
         print(
             f"{result['port']:<10} "
+            f"{result['service']:<12} "
             f"{result['status'].upper():<12} "
             f"{result['banner']}"
         )
