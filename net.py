@@ -27,15 +27,15 @@ def scan_port(ipaddress, port):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             sock.settimeout(1)
             sock.connect((ipaddress, port))
-        try:
-            data = sock.recv(1024)
-            banner = data.decode('utf-8', errors='ignore').strip()
-            if banner:
-                print("[+] Port " + str(port) + " is open | Banner: " + banner)
-            else:   
-                print("[+] Port " + str(port) + " is open | No banner received")
-        except:
-            print(f"[+] Port {port} is open: Unable to detect version")
+            try:
+                data = sock.recv(1024)
+                banner = data.decode('utf-8', errors='ignore').strip()
+                if banner:
+                    print("[+] Port " + str(port) + " is open | Banner: " + banner)
+                else:   
+                    print("[+] Port " + str(port) + " is open | No banner received")
+            except:
+                print(f"[+] Port {port} is open: Unable to detect version")
     except:
         pass
 
