@@ -71,3 +71,16 @@ def print_error(message):
     """
 
     print(f"\n[!] {message}")
+
+
+def ask_export():
+
+    print("\n[?] Export scan results?")
+    print("1. JSON")
+    print("2. CSV")
+    print("3. Both")
+    print("4. Skip")
+
+    choice = input("[+] Select an option: ").strip()
+
+    return choice

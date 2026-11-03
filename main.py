@@ -12,7 +12,8 @@ from output.terminal import (
     print_open_ports,
     print_error
 )
-
+from output.reports import save_json, save_csv
+from output.terminal import ask_export
 from config import DEFAULT_START_PORT, DEFAULT_END_PORT
 
 
@@ -88,6 +89,24 @@ def main():
 
             if results:
                 print_open_ports(results)
+                
+                choice = ask_export()
+                if choice == "1":
+                    filepath = save_json(results)
+                    print(f"[+] JSON report saved: {filepath}")
+                elif choice == "2":
+                    filepath = save_csv(results)
+                    print(f"[+] CSV report saved: {filepath}")
+                elif choice == "3":
+                    json_path = save_json(results)
+                    csv_path = save_csv(results)
+
+                    print(f"[+] JSON report saved: {json_path}")
+                    print(f"[+] CSV report saved: {csv_path}")
+                elif choice == "4":
+                    print("[+] Export skipped.")
+                else:
+                    print("[!] Invalid selection.")
 
         except ValueError as error:
             print_error(str(error))
