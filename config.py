@@ -22,3 +22,6 @@ HTTP_PORTS = {
 # Default scan range
 DEFAULT_START_PORT = 1
 DEFAULT_END_PORT = 65535
+
+
+VERSION = "1.0.0"

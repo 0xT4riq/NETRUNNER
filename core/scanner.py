@@ -3,10 +3,7 @@ import socket
 import time
 import concurrent.futures
 
-from config import (
-    MAX_WORKERS,
-    CONNECT_TIMEOUT,
-)
+from config import MAX_WORKERS, CONNECT_TIMEOUT
 from detection.services import (
     get_registered_service,
     detect_service,
@@ -14,32 +11,22 @@ from detection.services import (
 )
 
 
-
 def scan_port(target_ip, hostname, port):
     """
     Attempt a TCP connection to one port.
-
-    Returns a dictionary if the port is open.
-    Returns None if the connection fails.
+    Returns a dictionary if open, otherwise None.
     """
-
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-
-            # Connection timeout
             sock.settimeout(CONNECT_TIMEOUT)
 
             try:
                 sock.connect((target_ip, port))
-
             except OSError:
                 return None
 
             registered_service = get_registered_service(port)
-
-
             banner = grab_banner(sock, hostname, port)
-
             detected_service = detect_service(banner)
 
             return {
@@ -54,12 +41,22 @@ def scan_port(target_ip, hostname, port):
         return None
 
 
-def scan(target_ip, hostname, start_port, end_port):
+def scan(target_ip, hostname, ports, end_port=None):
     """
-    Scan a range of TCP ports concurrently.
+    Scan selected TCP ports concurrently.
 
-    Returns a dictionary containing scan metadata and open ports.
+    Accepts either:
+        A list of ports: [22, 80, 443]
+        A legacy range: 1, 1000
     """
+
+    if end_port is not None:
+        ports = range(ports, end_port + 1)
+
+    ports = sorted(set(ports))
+
+    if not ports:
+        raise ValueError("At least one port must be selected.")
 
     open_ports = []
     futures = []
@@ -71,26 +68,21 @@ def scan(target_ip, hostname, start_port, end_port):
     )
 
     try:
-
-        # Submit scanning tasks.
-        for port in range(start_port, end_port + 1):
-
+        for port in ports:
             future = executor.submit(
                 scan_port,
                 target_ip,
                 hostname,
                 port
             )
-
             futures.append(future)
 
-        # Collect results as tasks finish.
         for future in concurrent.futures.as_completed(futures):
-
             result = future.result()
 
             if result:
                 open_ports.append(result)
+
     finally:
         executor.shutdown(wait=True, cancel_futures=True)
 
@@ -99,12 +91,11 @@ def scan(target_ip, hostname, start_port, end_port):
     return {
         "target_ip": target_ip,
         "hostname": hostname,
-        "start_port": start_port,
-        "end_port": end_port,
+        "ports": ports,
         "open_ports": sorted(
             open_ports,
             key=lambda result: result["port"]
         ),
-        "total_scanned": end_port - start_port + 1,
+        "total_scanned": len(ports),
         "duration": elapsed
     }

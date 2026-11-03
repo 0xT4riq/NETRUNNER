@@ -1,9 +1,10 @@
 
+import argparse
 import signal
 import sys
 
 from core.target import check_ip
-from core.validator import validate_port_range
+from core.validator import validate_port_range, parse_ports
 from core.scanner import scan
 
 from output.terminal import (
@@ -13,8 +14,11 @@ from output.terminal import (
     print_error,
     ask_export
 )
+
 from output.reports import save_json, save_csv
-from config import DEFAULT_START_PORT, DEFAULT_END_PORT
+from config import DEFAULT_START_PORT, DEFAULT_END_PORT, VERSION
+
+
 
 
 def shutdown(sig, frame):
@@ -22,13 +26,61 @@ def shutdown(sig, frame):
     sys.exit(0)
 
 
-def main():
+def export_results(results, export_format):
+    """Export scan results in the selected format."""
 
-    signal.signal(signal.SIGINT, shutdown)
+    if export_format == "json":
+        print(f"[+] JSON report saved: {save_json(results)}")
+
+    elif export_format == "csv":
+        print(f"[+] CSV report saved: {save_csv(results)}")
+
+    elif export_format == "both":
+        print(f"[+] JSON report saved: {save_json(results)}")
+        print(f"[+] CSV report saved: {save_csv(results)}")
+
+
+def run_scan(targets, ports, export_format=None):
+    """Run scans against one or more targets."""
+
+    for target in targets:
+        try:
+            target_ip = check_ip(target)
+
+            print_scan_info(target, target_ip, ports)
+
+            results = scan(target_ip, target, ports)
+
+            print_open_ports(results)
+
+            if export_format:
+                export_results(results, export_format)
+
+            elif sys.stdin.isatty():
+                choice = ask_export()
+
+                formats = {
+                    "1": "json",
+                    "2": "csv",
+                    "3": "both"
+                }
+
+                if choice in formats:
+                    export_results(results, formats[choice])
+                elif choice == "4":
+                    print("[+] Export skipped.")
+                else:
+                    print("[!] Invalid selection.")
+
+        except (ValueError, OSError) as error:
+            print_error(str(error))
+
+
+def interactive_mode():
+    """Run NETRUNNER using the original interactive interface."""
 
     print_banner()
 
-    # Get user input
     targets_input = input(
         "[+] Enter target/s (separate with commas): "
     ).strip()
@@ -37,26 +89,21 @@ def main():
         "[+] Enter port range (e.g. 20-80) or leave empty: "
     ).strip()
 
-    # Validate and parse port range
     try:
-
         if port_range:
-            start_port, end_port = map(
-                int,
-                port_range.split("-")
-            )
-
+            start_port, end_port = map(int, port_range.split("-"))
         else:
             start_port = DEFAULT_START_PORT
             end_port = DEFAULT_END_PORT
 
         validate_port_range(start_port, end_port)
 
+        ports = list(range(start_port, end_port + 1))
+
     except ValueError as error:
         print_error(f"Invalid port range: {error}")
         return
 
-    # Parse targets
     targets = [
         target.strip()
         for target in targets_input.split(",")
@@ -67,54 +114,86 @@ def main():
         print_error("No targets provided.")
         return
 
-    # Scan each target
-    for target in targets:
+    run_scan(targets, ports)
 
+
+def build_parser():
+    """Configure NETRUNNER command-line arguments."""
+
+    parser = argparse.ArgumentParser(
+        prog="netrunner",
+        description="NETRUNNER - Python Network Reconnaissance Tool"
+    )
+
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"NETRUNNER {VERSION}"
+    )
+
+    subparsers = parser.add_subparsers(
+        dest="command"
+    )
+
+    scan_parser = subparsers.add_parser(
+        "scan",
+        help="Scan one or more targets"
+    )
+
+    scan_parser.add_argument(
+        "targets",
+        nargs="+",
+        help="Target IP addresses or hostnames"
+    )
+
+    scan_parser.add_argument(
+        "-p",
+        "--ports",
+        default=f"{DEFAULT_START_PORT}-{DEFAULT_END_PORT}",
+        help="Ports to scan (example: 22,80,443 or 1-1000)"
+    )
+
+    scan_parser.add_argument(
+        "--format",
+        choices=["json", "csv", "both"],
+        help="Automatically export scan results"
+    )
+
+    return parser
+
+
+def main():
+    signal.signal(signal.SIGINT, shutdown)
+
+    parser = build_parser()
+    args = parser.parse_args()
+
+    if args.command is None:
+        interactive_mode()
+        return
+
+    if args.command == "scan":
         try:
-            target_ip = check_ip(target)
+            ports = parse_ports(args.ports)
 
-            print_scan_info(
-                target,
-                target_ip,
-                start_port,
-                end_port
-            )
+            targets = []
 
-            results = scan(
-                target_ip,
-                target,
-                start_port,
-                end_port
-            )
+            for target in args.targets:
+                targets.extend(
+                    item.strip()
+                    for item in target.split(",")
+                    if item.strip()
+                )
 
-            if results is not None:
-                print_open_ports(results)
-                
-                choice = ask_export()
-                if choice == "1":
-                    filepath = save_json(results)
-                    print(f"[+] JSON report saved: {filepath}")
-                elif choice == "2":
-                    filepath = save_csv(results)
-                    print(f"[+] CSV report saved: {filepath}")
-                elif choice == "3":
-                    json_path = save_json(results)
-                    csv_path = save_csv(results)
+            if not targets:
+                parser.error("At least one target must be provided.")
 
-                    print(f"[+] JSON report saved: {json_path}")
-                    print(f"[+] CSV report saved: {csv_path}")
-                elif choice == "4":
-                    print("[+] Export skipped.")
-                else:
-                    print("[!] Invalid selection.")
+            print_banner()
+            run_scan(targets, ports, args.format)
 
         except ValueError as error:
-            print_error(str(error))
+            parser.error(str(error))
 
 
 if __name__ == "__main__":
-    try:
-        main()
-
-    except KeyboardInterrupt:
-        print("\n\n[!] NETRUNNER terminated by user.")
+    main()

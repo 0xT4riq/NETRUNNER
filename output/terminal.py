@@ -21,14 +21,29 @@ def print_banner():
     """)
 
 
-def print_scan_info(target, target_ip, start, end):
+
+def print_scan_info(target, target_ip, ports, end=None):
     """
     Display information before scanning.
     """
 
+    if end is not None:
+        selected_ports = list(range(ports, end + 1))
+    else:
+        selected_ports = sorted(set(ports))
+
     print(f"\n[# Scanning Target] {target}")
     print(f"[# Resolved IP] {target_ip}")
-    print(f"[# Port Range] {start}-{end}")
+
+    if len(selected_ports) <= 20:
+        print(f"[# Selected Ports] {', '.join(map(str, selected_ports))}")
+    else:
+        print(f"[# Selected Ports] {len(selected_ports)} ports")
+        print(
+            f"[# Port Span] "
+            f"{selected_ports[0]}-{selected_ports[-1]}"
+        )
+
 
 
 def print_open_ports(results):
@@ -58,7 +73,7 @@ def print_open_ports(results):
             f"{result['registered_service']:<15}"
             f"{result['detected_service']:<18}"
             f"{result['status']:<10}"
-            f"{result['banner'][:100]}"
+            f"{result['banner'].splitlines()[0][:100]}"
         )
 
     print("-" * 100)
