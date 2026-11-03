@@ -9,11 +9,12 @@ from config import (
     BANNER_TIMEOUT,
     HTTP_PORTS
 )
-
 from detection.services import (
     get_registered_service,
-    detect_service
+    detect_service,
+    grab_banner
 )
+
 
 
 def scan_port(target_ip, hostname, port):
@@ -42,34 +43,10 @@ def scan_port(target_ip, hostname, port):
             # Separate timeout for banner collection.
             sock.settimeout(BANNER_TIMEOUT)
 
-            data = b""
 
-            try:
-                if port in HTTP_PORTS:
+            registered_service = get_registered_service(port)
 
-                    request = (
-                        f"HEAD / HTTP/1.1\r\n"
-                        f"Host: {hostname}\r\n"
-                        f"Connection: close\r\n\r\n"
-                    )
-
-                    sock.sendall(request.encode("ascii"))
-                    data = sock.recv(1024)
-
-                else:
-                    # Wait for services that send automatic banners.
-                    data = sock.recv(1024)
-
-            except socket.timeout:
-                pass
-
-            except OSError:
-                pass
-
-            banner = data.decode(
-                "utf-8",
-                errors="ignore"
-            ).strip()
+            banner = grab_banner(sock, hostname, port)
 
             detected_service = detect_service(banner)
 

@@ -1,6 +1,40 @@
 
 import socket
 
+from config import BANNER_TIMEOUT, HTTP_PORTS
+
+
+def grab_banner(sock, hostname, port):
+    """
+    Collect a service banner or protocol response.
+
+    HTTP services receive a HEAD request.
+    Other services are checked for automatic banners.
+    """
+
+    sock.settimeout(BANNER_TIMEOUT)
+
+    try:
+        if port in HTTP_PORTS:
+
+            request = (
+                f"HEAD / HTTP/1.1\r\n"
+                f"Host: {hostname}\r\n"
+                f"Connection: close\r\n\r\n"
+            )
+
+            sock.sendall(request.encode("ascii"))
+
+        data = sock.recv(1024)
+
+        return data.decode(
+            "utf-8",
+            errors="ignore"
+        ).strip()
+
+    except (socket.timeout, OSError):
+        return ""
+
 
 def get_registered_service(port):
     """
@@ -17,8 +51,7 @@ def get_registered_service(port):
 
 def detect_service(banner):
     """
-    Make a basic guess based on the received banner.
-    This is not full service fingerprinting.
+    Identify a service using its response banner.
     """
 
     if not banner:
@@ -33,6 +66,9 @@ def detect_service(banner):
         return "HTTP"
 
     elif upper_banner.startswith("220"):
+        if "ESMTP" in upper_banner or "SMTP" in upper_banner:
+            return "SMTP"
+
         return "FTP/SMTP (Possible)"
 
     elif upper_banner.startswith("+OK"):
