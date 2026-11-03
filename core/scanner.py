@@ -41,13 +41,12 @@ def scan_port(target_ip, hostname, port):
         return None
 
 
-def scan(target_ip, hostname, ports, end_port=None):
+
+def scan(target_ip, hostname, ports, end_port=None, progress_callback=None):
     """
     Scan selected TCP ports concurrently.
 
-    Accepts either:
-        A list of ports: [22, 80, 443]
-        A legacy range: 1, 1000
+    Reports progress through an optional callback.
     """
 
     if end_port is not None:
@@ -60,6 +59,9 @@ def scan(target_ip, hostname, ports, end_port=None):
 
     open_ports = []
     futures = []
+
+    total_ports = len(ports)
+    completed = 0
 
     start_time = time.perf_counter()
 
@@ -83,6 +85,17 @@ def scan(target_ip, hostname, ports, end_port=None):
             if result:
                 open_ports.append(result)
 
+            completed += 1
+
+            elapsed = time.perf_counter() - start_time
+
+            if progress_callback:
+                progress_callback(
+                    completed,
+                    total_ports,
+                    elapsed
+                )
+
     finally:
         executor.shutdown(wait=True, cancel_futures=True)
 
@@ -96,6 +109,6 @@ def scan(target_ip, hostname, ports, end_port=None):
             open_ports,
             key=lambda result: result["port"]
         ),
-        "total_scanned": len(ports),
+        "total_scanned": total_ports,
         "duration": elapsed
     }

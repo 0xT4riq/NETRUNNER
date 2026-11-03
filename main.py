@@ -12,7 +12,8 @@ from output.terminal import (
     print_scan_info,
     print_open_ports,
     print_error,
-    ask_export
+    ask_export,
+    ProgressDisplay
 )
 
 from output.reports import save_json, save_csv
@@ -59,7 +60,16 @@ def run_scan(targets, ports, export_format=None):
 
             print_scan_info(target, target_ip, ports)
 
-            results = scan(target_ip, target, ports)
+            progress = ProgressDisplay()
+
+            progress.update(0, len(ports), 0)
+
+            results = scan(
+                target_ip,
+                target,
+                ports,
+                progress_callback=progress.update
+            )
 
             print_open_ports(results)
 

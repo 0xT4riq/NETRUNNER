@@ -1,4 +1,57 @@
 
+import sys
+import time
+
+
+
+class ProgressDisplay:
+    """
+    Display scan progress in the terminal.
+    """
+
+    def __init__(self, width=24, refresh_interval=0.1):
+        self.width = width
+        self.refresh_interval = refresh_interval
+        self.last_update = 0
+
+    def update(self, completed, total, elapsed):
+        """
+        Update the progress bar.
+        """
+
+        now = time.perf_counter()
+
+        # Avoid refreshing the terminal too frequently.
+        if (
+            now - self.last_update < self.refresh_interval
+            and completed < total
+        ):
+            return
+
+        self.last_update = now
+
+        percentage = completed / total * 100
+
+        filled = int(self.width * completed / total)
+        bar = "━" * filled + "░" * (self.width - filled)
+
+        speed = completed / elapsed if elapsed > 0 else 0
+
+        message = (
+            f"\rScanning {bar} {percentage:5.1f}% | "
+            f"{completed:,}/{total:,} ports | "
+            f"{speed:,.0f} ports/sec | "
+            f"{elapsed:.1f}s"
+        )
+
+        sys.stdout.write(message)
+        sys.stdout.flush()
+
+        if completed == total:
+            print()
+
+
+
 def print_banner():
     """
     Display NETRUNNER logo and version.
