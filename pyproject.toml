@@ -1,0 +1,46 @@
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "netrunner-recon"
+version = "1.0.0"
+description = "A lightweight Python TCP network reconnaissance tool"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "0xT4riq" }
+]
+keywords = [
+    "network-scanner",
+    "port-scanner",
+    "cybersecurity",
+    "reconnaissance",
+    "tcp"
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Topic :: Security",
+    "Topic :: System :: Networking",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14"
+]
+dependencies = []
+
+[project.scripts]
+netrunner = "main:main"
+
+[tool.setuptools]
+py-modules = ["main", "config"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["core*", "detection*", "output*", "utils*"]
+exclude = ["tests*", "reports*"]

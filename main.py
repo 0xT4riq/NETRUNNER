@@ -26,22 +26,32 @@ def shutdown(sig, frame):
     sys.exit(0)
 
 
+
 def export_results(results, export_format):
     """Export scan results in the selected format."""
 
-    if export_format == "json":
-        print(f"[+] JSON report saved: {save_json(results)}")
+    try:
+        if export_format == "json":
+            print(f"[+] JSON report saved: {save_json(results)}")
 
-    elif export_format == "csv":
-        print(f"[+] CSV report saved: {save_csv(results)}")
+        elif export_format == "csv":
+            print(f"[+] CSV report saved: {save_csv(results)}")
 
-    elif export_format == "both":
-        print(f"[+] JSON report saved: {save_json(results)}")
-        print(f"[+] CSV report saved: {save_csv(results)}")
+        elif export_format == "both":
+            print(f"[+] JSON report saved: {save_json(results)}")
+            print(f"[+] CSV report saved: {save_csv(results)}")
+
+        return True
+
+    except OSError as error:
+        print_error(f"Could not save report: {error}")
+        return False
 
 
 def run_scan(targets, ports, export_format=None):
     """Run scans against one or more targets."""
+
+    failed = False
 
     for target in targets:
         try:
@@ -54,7 +64,8 @@ def run_scan(targets, ports, export_format=None):
             print_open_ports(results)
 
             if export_format:
-                export_results(results, export_format)
+                if not export_results(results, export_format):
+                    failed = True
 
             elif sys.stdin.isatty():
                 choice = ask_export()
@@ -66,14 +77,21 @@ def run_scan(targets, ports, export_format=None):
                 }
 
                 if choice in formats:
-                    export_results(results, formats[choice])
+                    if not export_results(results, formats[choice]):
+                        failed = True
+
                 elif choice == "4":
                     print("[+] Export skipped.")
+
                 else:
                     print("[!] Invalid selection.")
 
         except (ValueError, OSError) as error:
-            print_error(str(error))
+            print_error(f"{target}: {error}")
+            failed = True
+
+    return 1 if failed else 0
+
 
 
 def interactive_mode():
@@ -114,7 +132,7 @@ def interactive_mode():
         print_error("No targets provided.")
         return
 
-    run_scan(targets, ports)
+    return run_scan(targets, ports)
 
 
 def build_parser():
@@ -162,6 +180,7 @@ def build_parser():
     return parser
 
 
+
 def main():
     signal.signal(signal.SIGINT, shutdown)
 
@@ -170,7 +189,7 @@ def main():
 
     if args.command is None:
         interactive_mode()
-        return
+        return 0
 
     if args.command == "scan":
         try:
@@ -189,11 +208,19 @@ def main():
                 parser.error("At least one target must be provided.")
 
             print_banner()
-            run_scan(targets, ports, args.format)
+
+            return run_scan(
+                targets,
+                ports,
+                args.format
+            )
 
         except ValueError as error:
             parser.error(str(error))
 
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
+
