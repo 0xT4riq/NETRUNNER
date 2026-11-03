@@ -6,8 +6,6 @@ import concurrent.futures
 from config import (
     MAX_WORKERS,
     CONNECT_TIMEOUT,
-    BANNER_TIMEOUT,
-    HTTP_PORTS
 )
 from detection.services import (
     get_registered_service,
@@ -37,14 +35,8 @@ def scan_port(target_ip, hostname, port):
             except OSError:
                 return None
 
-            # TCP connection succeeded.
             registered_service = get_registered_service(port)
 
-            # Separate timeout for banner collection.
-            sock.settimeout(BANNER_TIMEOUT)
-
-
-            registered_service = get_registered_service(port)
 
             banner = grab_banner(sock, hostname, port)
 
@@ -66,7 +58,7 @@ def scan(target_ip, hostname, start_port, end_port):
     """
     Scan a range of TCP ports concurrently.
 
-    Returns a list containing information about open ports.
+    Returns a dictionary containing scan metadata and open ports.
     """
 
     open_ports = []
@@ -99,23 +91,8 @@ def scan(target_ip, hostname, start_port, end_port):
 
             if result:
                 open_ports.append(result)
-
-    except KeyboardInterrupt:
-
-        print("\n[!] Scan interrupted.")
-
-        for future in futures:
-            future.cancel()
-
-        executor.shutdown(
-            wait=True,
-            cancel_futures=True
-        )
-
-        return open_ports
-
-    else:
-        executor.shutdown(wait=True)
+    finally:
+        executor.shutdown(wait=True, cancel_futures=True)
 
     elapsed = time.perf_counter() - start_time
 

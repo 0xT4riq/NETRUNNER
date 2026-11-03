@@ -10,10 +10,10 @@ from output.terminal import (
     print_banner,
     print_scan_info,
     print_open_ports,
-    print_error
+    print_error,
+    ask_export
 )
 from output.reports import save_json, save_csv
-from output.terminal import ask_export
 from config import DEFAULT_START_PORT, DEFAULT_END_PORT
 
 
@@ -87,7 +87,7 @@ def main():
                 end_port
             )
 
-            if results:
+            if results is not None:
                 print_open_ports(results)
                 
                 choice = ask_export()
