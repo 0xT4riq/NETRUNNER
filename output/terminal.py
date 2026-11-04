@@ -6,7 +6,7 @@ import time
 
 class ProgressDisplay:
     """
-    Display scan progress in the terminal.
+    Display scan progress, speed, and estimated completion time.
     """
 
     def __init__(self, width=24, refresh_interval=0.1):
@@ -15,9 +15,10 @@ class ProgressDisplay:
         self.last_update = 0
 
     def update(self, completed, total, elapsed):
-        """
-        Update the progress bar.
-        """
+        """Update the progress bar."""
+
+        if total <= 0:
+            return
 
         now = time.perf_counter()
 
@@ -37,19 +38,31 @@ class ProgressDisplay:
 
         speed = completed / elapsed if elapsed > 0 else 0
 
+        remaining = total - completed
+        eta_seconds = remaining / speed if speed > 0 else 0
+
+        hours = int(eta_seconds // 3600)
+        minutes = int((eta_seconds % 3600) // 60)
+        seconds = int(eta_seconds % 60)
+
+        eta = (
+            f"{hours:02}:{minutes:02}:{seconds:02}"
+            if speed > 0
+            else "--:--:--"
+        )
+
         message = (
             f"\rScanning {bar} {percentage:5.1f}% | "
             f"{completed:,}/{total:,} ports | "
-            f"{speed:,.0f} ports/sec | "
-            f"{elapsed:.1f}s"
+            f"Elapsed: {elapsed:.1f}s | "
+            f"ETA: {eta}"
         )
 
-        sys.stdout.write(message)
+        sys.stdout.write("\r\033[K" + message)
         sys.stdout.flush()
 
         if completed == total:
             print()
-
 
 
 def print_banner():
@@ -121,19 +134,38 @@ def print_open_ports(results):
     print("-" * 100)
 
     for result in open_ports:
+        banner = result.get("banner") or ""
+        first_line = banner.splitlines()[0][:100] if banner else "N/A"
+
         print(
             f"{result['port']:<10}"
             f"{result['registered_service']:<15}"
             f"{result['detected_service']:<18}"
             f"{result['status']:<10}"
-            f"{result['banner'].splitlines()[0][:100]}"
+            f"{first_line}"
         )
 
     print("-" * 100)
 
-    print(f"Total ports scanned : {results['total_scanned']}")
-    print(f"Open ports found    : {len(open_ports)}")
-    print(f"Scan duration       : {results['duration']:.2f} seconds")
+    duration = results["duration"]
+    total_scanned = results["total_scanned"]
+
+    average_speed = (
+        total_scanned / duration
+        if duration > 0
+        else 0
+    )
+
+    print("\n[SCAN SUMMARY]")
+    print(f"Target              : {results['hostname']}")
+    print(f"Resolved IP         : {results['target_ip']}")
+    print(f"Total ports scanned : {total_scanned:,}")
+    print(f"Open ports found    : {len(open_ports):,}")
+    print(f"Scan duration       : {duration:.2f} seconds")
+    print(f"Average scan speed  : {average_speed:,.2f} ports/sec")
+
+    if not open_ports:
+        print("Result              : No open ports discovered")
 
     print("=" * 100 + "\n")
 

@@ -9,6 +9,8 @@ __pycache__/
 venv/
 env/
 
+netrunner_recon.egg-info/
+
 # Test and coverage files
 .pytest_cache/
 .coverage
