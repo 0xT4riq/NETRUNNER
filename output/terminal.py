@@ -168,7 +168,7 @@ def print_open_ports(results):
         print("Result              : No open ports discovered")
 
     print("=" * 100 + "\n")
-    
+
 def print_tls_results(results):
     """Display TLS inspection results."""
 
@@ -207,7 +207,13 @@ def print_tls_results(results):
             print(f"Validity Status     : {certificate['validity_status']}")
             print(f"Days Remaining      : {certificate['days_remaining']}")
             print(f"SHA256 Fingerprint  : {certificate['fingerprint_sha256']}")
-            print(f"SAN Domains         : {', '.join(certificate['san_domains']) or 'None'}")
+
+        san_domains = certificate.get("san_domains", [])
+        for domain in san_domains[:5]:  # Limit to first 5 SAN domains
+            print(f"SAN Domain          : {domain}")
+        remaining_sans = len(san_domains) - 5
+        if remaining_sans > 0:
+            print(f"... and {remaining_sans} more SAN domains")
 
     print("\n" + "=" * 70)
 
