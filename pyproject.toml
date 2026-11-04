@@ -32,7 +32,11 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14"
 ]
-dependencies = []
+dependencies = [
+
+    "cryptography>=44.0.0"
+
+]
 
 [project.scripts]
 netrunner = "main:main"
