@@ -1,165 +1,220 @@
 # NETRUNNER
 
-**A Python-based TCP Network Reconnaissance Tool**
+**A lightweight TCP network reconnaissance tool built with Python.**
 
-NETRUNNER is a command-line network reconnaissance tool built with Python. It scans TCP ports, identifies open services, collects service banners, and exports scan results in JSON and CSV formats.
+NETRUNNER is an open-source command-line tool for scanning TCP ports, identifying services, collecting service banners, and exporting scan results.
 
-This project was developed as a hands-on learning experience to strengthen my understanding of Python, computer networking, socket programming, concurrency, and software testing.
+Developed by [0xT4riq](https://github.com/0xT4riq).
+
+---
 
 ## Features
 
-- **Target Resolution:** Accepts IPv4 addresses and hostnames.
-- **TCP Port Scanning:** Checks a specified range of TCP ports.
-- **Concurrent Scanning:** Uses Python's `ThreadPoolExecutor` to scan multiple ports simultaneously.
-- **Service Identification:** Identifies services using registered port information and basic banner inspection.
-- **Banner Grabbing:** Collects available service banners and HTTP responses.
-- **Terminal Interface:** Displays scan results in a structured format.
-- **Report Export:** Saves results as JSON and CSV files.
-- **Automated Testing:** Includes unit tests and an integration test using a local TCP server.
-
-## Project Structure
-
-```text
-portScanner/
-│
-├── main.py
-├── config.py
-├── core/
-│   ├── scanner.py
-│   ├── target.py
-│   └── validator.py
-│
-├── detection/
-│   └── services.py
-│
-├── output/
-│   ├── terminal.py
-│   └── reports.py
-│
-├── tests/
-│   ├── test_reports.py
-│   ├── test_scanner.py
-│   ├── test_services.py
-│   ├── test_target.py
-│   └── test_validator.py
-│
-└── README.md
-```
+- TCP port scanning
+- Concurrent scanning using Python threads
+- Scan multiple targets
+- Custom port selection and ranges
+- Basic service identification
+- Banner grabbing
+- Live scan progress, speed, and ETA
+- JSON and CSV report export
+- Interactive and command-line interfaces
 
 ## Requirements
 
-- Python 3.10 or later
-- No third-party Python packages required.
+- Python 3.10 or newer
+- Windows, Linux, or macOS
 
-NETRUNNER currently uses Python's standard library.
+No third-party runtime dependencies are required.
 
 ## Installation
 
-Clone the repository:
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/0xT4riq/NETRUNNER.git
-```
-
-Navigate to the project directory:
-
-```bash
 cd NETRUNNER
 ```
 
-Run the application:
+### 2. Create a virtual environment
+
+**Windows (PowerShell):**
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+If PowerShell blocks activation scripts, you can use:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\.venv\Scripts\Activate.ps1
+```
+
+**Linux / macOS:**
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+### 3. Install NETRUNNER
+
+```bash
+python -m pip install -e .
+```
+
+## Usage
+
+After installation, run NETRUNNER directly from your terminal.
+
+### Help
+
+```bash
+netrunner -h
+netrunner --help
+```
+
+View scan-specific options:
+
+```bash
+netrunner scan -h
+```
+
+### Version
+
+```bash
+netrunner --version
+```
+
+### Basic scan
+
+```bash
+netrunner scan 192.168.1.1
+```
+
+### Scan selected ports
+
+```bash
+netrunner scan 192.168.1.1 -p 80
+```
+
+### Scan multiple ports
+
+```bash
+netrunner scan 192.168.1.1 -p 22,80,443
+```
+
+### Scan a port range
+
+```bash
+netrunner scan 192.168.1.1 -p 1-1000
+```
+
+### Scan multiple targets
+
+```bash
+netrunner scan 192.168.1.1 192.168.1.2 -p 22,80,443
+```
+
+Comma-separated targets are also supported:
+
+```bash
+netrunner scan 192.168.1.1,192.168.1.2 -p 80
+```
+
+### Export results
+
+Export as JSON:
+
+```bash
+netrunner scan 192.168.1.1 -p 1-1000 --format json
+```
+
+Export as CSV:
+
+```bash
+netrunner scan 192.168.1.1 -p 1-1000 --format csv
+```
+
+Export both formats:
+
+```bash
+netrunner scan 192.168.1.1 -p 1-1000 --format both
+```
+
+Reports are saved in the `reports/` directory.
+
+### Interactive mode
+
+You can also start NETRUNNER without arguments:
+
+```bash
+netrunner
+```
+
+Or run it directly from the source:
 
 ```bash
 python main.py
 ```
 
-## Usage
-
-When launched, NETRUNNER asks for:
-
-1. Target IP address or hostname.
-2. TCP port range.
-
-Example:
+## Example output
 
 ```text
-[+] Enter target/s (separate with commas): 127.0.0.1
-[+] Enter port range (e.g. 20-80) or leave empty: 1-1000
+NETRUNNER v1.0.0
+
+[+] Target: 192.168.1.1
+
+Scanning ━━━━━━━━━━━━━━━━━━━━ 100.0%
+1,000/1,000 ports | 2,450 ports/sec
+
+NETRUNNER | SCAN SUMMARY
+
+Total ports scanned : 1,000
+Open ports found    : 3
+Elapsed time        : 0.41 seconds
 ```
 
-You can enter multiple targets separated by commas.
+*Example output is illustrative.*
 
-Leaving the port range empty scans ports 1–65535.
+## Running tests
 
-After scanning, NETRUNNER displays discovered open ports and offers JSON and CSV export options.
-
-## Example Results
-
-Example output from an authorized scan of `scanme.nmap.org`:
-
-```text
-PORT      REGISTERED     DETECTED          STATUS
----------------------------------------------------
-22        ssh            SSH               Open
-80        http           HTTP              Open
----------------------------------------------------
-Total ports scanned : 1000
-Open ports found    : 2
-Scan duration       : 10.26 seconds
-```
-
-Scan results can be exported as:
-
-- JSON: Includes target information, scan metadata, and open-port details.
-- CSV: Contains open-port details for spreadsheet analysis.
-
-## Running Tests
-
-NETRUNNER includes automated tests using Python's built-in `unittest` framework.
-
-Run the complete test suite:
+Run the project's test suite:
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
-The current test suite contains **19 tests** covering:
+## Current limitations
 
-- Port-range validation.
-- Target validation and hostname resolution.
-- Service banner identification.
-- TCP scanning against a local test server.
-- JSON and CSV report generation.
+NETRUNNER is currently focused on TCP reconnaissance.
 
-## Current Limitations
+- IPv4 scanning only.
+- No UDP scanning.
+- No operating-system fingerprinting.
+- Basic service identification based on banners.
+- No dedicated TLS/HTTPS inspection.
 
-NETRUNNER is an educational project and has some limitations:
+## Responsible use
 
-- Supports IPv4 TCP scanning; IPv6 scanning is not implemented.
-- Service identification relies on basic banner inspection and registered port information.
-- Banner collection is not supported for every protocol.
-- HTTPS/TLS-specific service inspection is not implemented.
-- It does not currently perform UDP scanning or operating-system fingerprinting.
+NETRUNNER is intended for educational purposes and authorized network reconnaissance.
 
-## Responsible Use
+Only scan systems and networks that you own or have explicit permission to test. You are responsible for complying with applicable laws and network policies.
 
-NETRUNNER is intended for educational purposes and authorized network testing.
+## Contributing
 
-Only scan systems and networks you own or have explicit permission to test. The developer is not responsible for unauthorized use of this tool.
+Contributions, bug reports, and feature suggestions are welcome.
 
-## Future Improvements
+Please open an issue before starting major changes so we can discuss the proposed improvement.
 
-Potential future enhancements include:
+## License
 
-- Improved service fingerprinting.
-- HTTPS/TLS banner inspection.
-- UDP scanning.
-- Better scan cancellation and task management.
-- Improved terminal output and reporting.
-- Additional automated tests.
+NETRUNNER is intended to be distributed under the MIT License. See [LICENSE](LICENSE) for details.
 
-## Author
+---
 
-Developed as a personal cybersecurity and Python learning project.
+**Developed by [0xT4riq](https://github.com/0xT4riq)**
 
-**NETRUNNER — Explore. Scan. Understand.**
+[GitHub Repository](https://github.com/0xT4riq/NETRUNNER)
