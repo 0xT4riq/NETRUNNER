@@ -2,9 +2,9 @@ import socket
 import ssl
 from datetime import datetime, timezone
 from cryptography import x509
+from cryptography.hazmat.primitives import hashes
 
 
-now = datetime.now(timezone.utc)
 
 def inspect_tls(hostname, port=443, timeout=5):
     result = {
@@ -61,7 +61,15 @@ def inspect_tls(hostname, port=443, timeout=5):
                     result["cipher"] = cipher_info[0] if cipher_info else None
 
         result["tls_supported"] = True
+        
+        
 
+        if not certificate_der:
+            result["error"] = "Server did not provide a certificate."
+            return result
+        
+        
+        now = datetime.now(timezone.utc)
 
         certificate = x509.load_der_x509_certificate(
             certificate_der
@@ -74,12 +82,31 @@ def inspect_tls(hostname, port=443, timeout=5):
 
         else:
             status = "Valid"
+
+
+
+        try:
+            san_extension = certificate.extensions.get_extension_for_class(
+                x509.SubjectAlternativeName
+            )
+            san_domains = san_extension.value.get_values_for_type(
+                x509.DNSName
+            )
+        except x509.ExtensionNotFound:
+            san_domains = []
+
+        fingerprint = certificate.fingerprint(hashes.SHA256()).hex()
+        remaining = certificate.not_valid_after_utc - now
+        days_remaining = remaining.days
         result["certificate"] = {
             "subject": certificate.subject.rfc4514_string(),
             "issuer": certificate.issuer.rfc4514_string(),
             "valid_from": str(certificate.not_valid_before_utc),
             "valid_until": str(certificate.not_valid_after_utc),
-            "validity_status": status
+            "validity_status": status,
+            "san_domains": san_domains,
+            "fingerprint_sha256": fingerprint,
+            "days_remaining": days_remaining
         }
 
     except (OSError, ssl.SSLError, ValueError) as exc:

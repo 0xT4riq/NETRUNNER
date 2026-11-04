@@ -168,7 +168,48 @@ def print_open_ports(results):
         print("Result              : No open ports discovered")
 
     print("=" * 100 + "\n")
+    
+def print_tls_results(results):
+    """Display TLS inspection results."""
 
+    print("\n" + "=" * 70)
+    print(f" NETRUNNER | TLS INSPECTION FOR {results['hostname']}")
+    print("=" * 70)
+
+    for port_result in results["open_ports"]:
+        tls = port_result.get("tls")
+
+        if tls is None:
+            continue
+
+        print(f"\n[PORT {tls['port']}]")
+
+        if not tls["tls_supported"]:
+            print("TLS Supported       : No")
+            print(f"Error               : {tls['error'] or 'TLS handshake failed'}")
+            continue
+
+        certificate = tls["certificate"]
+
+        print("TLS Supported       : Yes")
+        print(f"TLS Version         : {tls['tls_version']}")
+        print(f"Cipher              : {tls['cipher']}")
+        print(f"Certificate Verified: {tls['certificate_verified']}")
+
+        if tls["verification_error"]:
+            print(f"Verification Error  : {tls['verification_error']}")
+
+        if certificate:
+            print(f"Subject             : {certificate['subject']}")
+            print(f"Issuer              : {certificate['issuer']}")
+            print(f"Valid From          : {certificate['valid_from']}")
+            print(f"Valid Until         : {certificate['valid_until']}")
+            print(f"Validity Status     : {certificate['validity_status']}")
+            print(f"Days Remaining      : {certificate['days_remaining']}")
+            print(f"SHA256 Fingerprint  : {certificate['fingerprint_sha256']}")
+            print(f"SAN Domains         : {', '.join(certificate['san_domains']) or 'None'}")
+
+    print("\n" + "=" * 70)
 
 def print_error(message):
     """

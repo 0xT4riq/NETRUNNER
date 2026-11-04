@@ -7,15 +7,17 @@ from core.target import check_ip
 from core.validator import validate_port_range, parse_ports
 from core.scanner import scan
 
+from detection.services import detect_service
 from output.terminal import (
     print_banner,
     print_scan_info,
     print_open_ports,
     print_error,
     ask_export,
-    ProgressDisplay
+    ProgressDisplay,
+    print_tls_results
 )
-
+from detection.tls import inspect_tls
 from output.reports import save_json, save_csv
 from config import DEFAULT_START_PORT, DEFAULT_END_PORT, VERSION, PORT_PROFILES
 
@@ -49,7 +51,7 @@ def export_results(results, export_format):
         return False
 
 
-def run_scan(targets, ports, export_format=None):
+def run_scan(targets, ports, export_format=None, tls=False):
     """Run scans against one or more targets."""
 
     failed = False
@@ -70,6 +72,23 @@ def run_scan(targets, ports, export_format=None):
                 ports,
                 progress_callback=progress.update
             )
+            if tls:
+                print("\n[+] Starting TLS inspection...")
+
+                for port_result in results["open_ports"]:
+                    tls_result = inspect_tls(
+                        target,
+                        port_result["port"]
+                    )
+
+                    port_result["tls"] = tls_result
+                    if tls_result["tls_supported"]:
+                        port_result["detected_service"] = detect_service(
+                            port_result.get("banner", ""),
+                            tls_supported=True
+                        )
+
+                print_tls_results(results)
 
             print_open_ports(results)
 
@@ -185,6 +204,11 @@ def build_parser():
         choices=["quick", "web", "full"],
         help="Choose a predefined port scanning profile"
     )
+    scan_parser.add_argument(
+        "--tls",
+        action="store_true",
+        help="Inspect TLS certificates on open ports"
+    )
 
     scan_parser.add_argument(
         "--format",
@@ -234,7 +258,8 @@ def main():
             return run_scan(
                 targets,
                 ports,
-                args.format
+                args.format,
+                tls=args.tls
             )
 
         except ValueError as error:

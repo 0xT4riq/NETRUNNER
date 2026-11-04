@@ -34,11 +34,12 @@ def scan_port(target_ip, hostname, port):
                 "status": "Open",
                 "registered_service": registered_service,
                 "detected_service": detected_service,
-                "banner": banner if banner else "No banner received"
+                "banner": banner
             }
 
     except OSError:
         return None
+
 
 
 
