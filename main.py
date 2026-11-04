@@ -85,8 +85,10 @@ def run_scan(targets, ports, export_format=None, tls=False):
                     if tls_result["tls_supported"]:
                         port_result["detected_service"] = detect_service(
                             port_result.get("banner", ""),
-                            tls_supported=True
+                            tls_supported=True,
+                            registered_service=port_result["registered_service"]
                         )
+
 
                 print_tls_results(results)
 

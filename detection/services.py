@@ -49,14 +49,21 @@ def get_registered_service(port):
         return "Unknown"
 
 
-def detect_service(banner,tls_supported=False):
+def detect_service(banner,tls_supported=False,registered_service="Unknown"):
     """
     Identify a service using its response banner.
     """
 
     if not banner or banner == "No banner received":
         if tls_supported:
-            return "TLS"
+            service_map = {
+            "https": "HTTPS",
+            "imaps": "IMAPS",
+            "pop3s": "POP3S",
+            "smtps": "SMTPS",
+            "submissions": "SMTPS"
+          }
+            return service_map.get(registered_service.lower(), "TLS")
         return "Unknown"
 
     upper_banner = banner.upper()
