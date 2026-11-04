@@ -78,7 +78,7 @@ def print_banner():
 |_| \_|_____| |_| |_| \_\\____/|_| \_|\___/|_____|_| \_\\
 
              Network Reconnaissance Tool
-                       NETRUNNER v1.0.0
+                       NETRUNNER v1.1.0
 
                  Developed by 0xT4riq
               github.com/0xT4riq/NETRUNNER

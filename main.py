@@ -17,7 +17,7 @@ from output.terminal import (
 )
 
 from output.reports import save_json, save_csv
-from config import DEFAULT_START_PORT, DEFAULT_END_PORT, VERSION
+from config import DEFAULT_START_PORT, DEFAULT_END_PORT, VERSION, PORT_PROFILES
 
 
 
@@ -180,6 +180,11 @@ def build_parser():
         default=f"{DEFAULT_START_PORT}-{DEFAULT_END_PORT}",
         help="Ports to scan (example: 22,80,443 or 1-1000)"
     )
+    scan_parser.add_argument(
+        "--profile",
+        choices=["quick", "web", "full"],
+        help="Choose a predefined port scanning profile"
+    )
 
     scan_parser.add_argument(
         "--format",
@@ -203,7 +208,14 @@ def main():
 
     if args.command == "scan":
         try:
-            ports = parse_ports(args.ports)
+            if args.profile:
+                if args.ports != f"{DEFAULT_START_PORT}-{DEFAULT_END_PORT}":
+                    parser.error("Use either --profile or --ports, not both.")
+
+                ports = PORT_PROFILES[args.profile]
+
+            else:
+                ports = parse_ports(args.ports)
 
             targets = []
 
